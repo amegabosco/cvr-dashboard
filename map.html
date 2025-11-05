@@ -1215,8 +1215,44 @@
 
       // Suivre le mouvement de la souris
       map.on('mousemove', 'districts-fill', (e) => {
+        // Mettre à jour la position
         tooltip.style.left = (e.originalEvent.clientX + 15) + 'px';
         tooltip.style.top = (e.originalEvent.clientY + 15) + 'px';
+
+        // Rafraîchir le contenu si on change de district
+        if (e.features.length > 0) {
+          const currentFeature = e.features[0];
+          const currentDistrictId = currentFeature.id;
+
+          if (currentDistrictId !== hoveredDistrictId) {
+            // On a changé de district, mettre à jour hover state
+            if (hoveredDistrictId !== null) {
+              map.setFeatureState(
+                { source: 'districts', id: hoveredDistrictId },
+                { hover: false }
+              );
+            }
+
+            hoveredDistrictId = currentDistrictId;
+            map.setFeatureState(
+              { source: 'districts', id: hoveredDistrictId },
+              { hover: true }
+            );
+
+            // Mettre à jour le contenu du tooltip
+            const districtName = currentFeature.properties.shapeName;
+            const activities = currentFeature.properties.activities;
+
+            tooltipName.textContent = districtName;
+
+            if (activities && activities.activities && activities.activities.length > 0) {
+              const activityNames = activities.activities.map(a => a.name).join(', ');
+              tooltipActivities.innerHTML = `<strong>Activités:</strong> ${activityNames}<br><strong>Bénéficiaires:</strong> ${activities.beneficiaries}`;
+            } else {
+              tooltipActivities.innerHTML = '<strong>Aucune activité</strong>';
+            }
+          }
+        }
       });
 
       map.on('mouseleave', 'districts-fill', () => {

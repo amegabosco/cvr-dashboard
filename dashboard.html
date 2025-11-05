@@ -57,9 +57,11 @@
     }
 
     .floating-nav-item.active {
-      background: rgba(32, 190, 255, 0.1);
+      background: rgba(32, 190, 255, 0.12);
       color: var(--kaggle-blue);
       font-weight: 600;
+      box-shadow: 0 0 0 2px rgba(32, 190, 255, 0.2);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .floating-nav-item .icon {
@@ -68,10 +70,43 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
     }
 
     .floating-nav-item .icon i {
       font-size: 20px;
+    }
+
+    /* Flèches de navigation */
+    .nav-arrow-up,
+    .nav-arrow-down {
+      position: absolute;
+      font-size: 10px;
+      color: var(--text-tertiary);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .nav-arrow-up {
+      top: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .nav-arrow-down {
+      bottom: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .floating-nav:hover .nav-arrow-up,
+    .floating-nav:hover .nav-arrow-down {
+      opacity: 1;
+    }
+
+    .floating-nav-item.active .nav-arrow-up,
+    .floating-nav-item.active .nav-arrow-down {
+      color: var(--kaggle-blue);
     }
 
     .floating-nav-item .label {
@@ -1991,13 +2026,21 @@
           const navItem = document.createElement('a');
           navItem.href = '#';
           navItem.className = 'floating-nav-item' + (index === 0 ? ' active' : '');
+          navItem.dataset.sectionId = section.id;
           navItem.onclick = (e) => {
             e.preventDefault();
             scrollToSection(section.id, navItem);
           };
 
+          // Ajouter flèche haut si ce n'est pas le premier
+          const arrowUp = index > 0 ? '<i class="ti ti-chevron-up nav-arrow-up"></i>' : '';
+          // Ajouter flèche bas si ce n'est pas le dernier
+          const arrowDown = index < sections.length - 1 ? '<i class="ti ti-chevron-down nav-arrow-down"></i>' : '';
+
           navItem.innerHTML = `
+            ${arrowUp}
             <span class="icon"><i class="ti ${section.icon}"></i></span>
+            ${arrowDown}
             <span class="label">${section.label}</span>
           `;
 
@@ -2010,6 +2053,9 @@
     function scrollToSection(sectionId, clickedElement) {
       const section = document.getElementById(sectionId);
       if (section) {
+        // Désactiver la détection auto pendant le scroll programmatique
+        isScrolling = true;
+
         const headerOffset = 100;
         const sectionPosition = section.getBoundingClientRect().top + window.pageYOffset;
         const offsetPosition = sectionPosition - headerOffset;
@@ -2027,6 +2073,11 @@
         if (clickedElement) {
           clickedElement.classList.add('active');
         }
+
+        // Réactiver la détection auto après le scroll
+        setTimeout(() => {
+          isScrolling = false;
+        }, 1000);
       }
     }
 
@@ -2055,6 +2106,53 @@
       // Scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // Détection automatique de la section en cours lors du scroll
+    let isScrolling = false;
+    let scrollTimeout;
+
+    function updateActiveNavOnScroll() {
+      if (isScrolling) return;
+
+      const navItems = document.querySelectorAll('.floating-nav-item');
+      if (navItems.length === 0) return;
+
+      const scrollPos = window.scrollY + 200; // Offset pour anticipation
+
+      let activeFound = false;
+
+      navItems.forEach(item => {
+        const sectionId = item.dataset.sectionId;
+        const section = document.getElementById(sectionId);
+
+        if (section) {
+          const sectionTop = section.offsetTop;
+          const sectionBottom = sectionTop + section.offsetHeight;
+
+          if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+            if (!item.classList.contains('active')) {
+              navItems.forEach(i => i.classList.remove('active'));
+              item.classList.add('active');
+            }
+            activeFound = true;
+          }
+        }
+      });
+
+      // Si aucune section trouvée, activer la première
+      if (!activeFound && navItems.length > 0) {
+        navItems.forEach(i => i.classList.remove('active'));
+        navItems[0].classList.add('active');
+      }
+    }
+
+    // Écouteur de scroll avec throttle
+    window.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        updateActiveNavOnScroll();
+      }, 100);
+    }, { passive: true });
 
     // Initialize progress bars animation on page load
     window.addEventListener('load', function() {
