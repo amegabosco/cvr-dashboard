@@ -652,9 +652,180 @@
     .reset-view-btn i {
       font-size: 16px;
     }
+
+    /* Password Protection Screen */
+    #passwordScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1a5f8f 0%, #20BEFF 100%);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    #passwordScreen.hidden {
+      display: none;
+    }
+
+    .password-container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      animation: slideUp 0.4s ease-out;
+    }
+
+    .password-logo {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: var(--kaggle-blue);
+    }
+
+    .password-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .password-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 30px;
+    }
+
+    .password-input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .password-input {
+      width: 100%;
+      padding: 14px 20px;
+      border: 2px solid var(--border-light);
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s;
+      box-sizing: border-box;
+    }
+
+    .password-input:focus {
+      outline: none;
+      border-color: var(--kaggle-blue);
+      box-shadow: 0 0 0 3px rgba(32, 190, 255, 0.1);
+    }
+
+    .password-input.error {
+      border-color: #F44336;
+      animation: shake 0.5s;
+    }
+
+    .password-button {
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--kaggle-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s;
+    }
+
+    .password-button:hover {
+      background: var(--kaggle-dark-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(32, 190, 255, 0.3);
+    }
+
+    .password-button:active {
+      transform: translateY(0);
+    }
+
+    .password-error-message {
+      color: #F44336;
+      font-size: 14px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .password-footer {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-light);
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Password Protection Screen -->
+  <div id="passwordScreen">
+    <div class="password-container">
+      <div class="password-logo">🔒</div>
+      <h1 class="password-title">CVR Mapping</h1>
+      <p class="password-subtitle">Accès Protégé - MINUSCA/UNOPS</p>
+
+      <div class="password-input-group">
+        <input
+          type="password"
+          id="passwordInput"
+          class="password-input"
+          placeholder="Entrez le mot de passe"
+          autocomplete="off"
+        >
+      </div>
+
+      <button class="password-button" id="passwordSubmit">
+        <i class="ti ti-lock-open"></i>
+        Accéder
+      </button>
+
+      <div class="password-error-message" id="passwordError">
+        Mot de passe incorrect. Veuillez réessayer.
+      </div>
+
+      <div class="password-footer">
+        Programme CVR 2025-2026
+      </div>
+    </div>
+  </div>
 
   <!-- District Tooltip (suit la souris) -->
   <div class="district-tooltip" id="districtTooltip">
@@ -829,7 +1000,93 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
   <script>
+    // ============================================
+    // Password Protection
+    // ============================================
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const passwordScreen = document.getElementById('passwordScreen');
+      const passwordInput = document.getElementById('passwordInput');
+      const passwordSubmit = document.getElementById('passwordSubmit');
+      const passwordError = document.getElementById('passwordError');
+      const CORRECT_PASSWORD = 'cvr2025';
+
+      // Check if user is already authenticated
+      const isAuthenticated = sessionStorage.getItem('cvr_authenticated');
+
+      if (isAuthenticated === 'true') {
+        // User is already authenticated, hide password screen
+        passwordScreen.classList.add('hidden');
+      } else {
+        // Show password screen
+        passwordScreen.classList.remove('hidden');
+      }
+
+      // Handle password submission
+      function verifyPassword() {
+        const enteredPassword = passwordInput.value.trim();
+
+        if (enteredPassword === CORRECT_PASSWORD) {
+          // Correct password
+          sessionStorage.setItem('cvr_authenticated', 'true');
+
+          // Hide password screen with fade out
+          passwordScreen.style.animation = 'fadeOut 0.3s ease-out';
+          setTimeout(() => {
+            passwordScreen.classList.add('hidden');
+            passwordScreen.style.animation = '';
+          }, 300);
+
+          // Clear input
+          passwordInput.value = '';
+          passwordError.style.display = 'none';
+        } else {
+          // Incorrect password
+          passwordInput.classList.add('error');
+          passwordError.style.display = 'block';
+
+          // Remove error state after animation
+          setTimeout(() => {
+            passwordInput.classList.remove('error');
+          }, 500);
+
+          // Clear input
+          passwordInput.value = '';
+          passwordInput.focus();
+        }
+      }
+
+      // Submit button click
+      passwordSubmit.addEventListener('click', verifyPassword);
+
+      // Enter key press
+      passwordInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          verifyPassword();
+        }
+      });
+
+      // Focus input on load
+      if (!isAuthenticated) {
+        setTimeout(() => {
+          passwordInput.focus();
+        }, 300);
+      }
+    });
+
+    // Add fadeOut animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // ============================================
     // Configuration Mapbox
+    // ============================================
     mapboxgl.accessToken = 'pk.eyJ1IjoiYW1lZ2Fib3NjbyIsImEiOiJ0SWE0WktNIn0.Dhoe8NU0itRsIY9iYL5b2A';
 
     // Coordonnées de Bangui
