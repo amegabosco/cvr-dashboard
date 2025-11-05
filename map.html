@@ -1012,7 +1012,7 @@
       const CORRECT_PASSWORD = 'cvr2025';
 
       // Check if user is already authenticated
-      const isAuthenticated = sessionStorage.getItem('cvr_authenticated');
+      const isAuthenticated = localStorage.getItem('cvr_authenticated');
 
       if (isAuthenticated === 'true') {
         // User is already authenticated, hide password screen
@@ -1028,7 +1028,7 @@
 
         if (enteredPassword === CORRECT_PASSWORD) {
           // Correct password
-          sessionStorage.setItem('cvr_authenticated', 'true');
+          localStorage.setItem('cvr_authenticated', 'true');
 
           // Hide password screen with fade out
           passwordScreen.style.animation = 'fadeOut 0.3s ease-out';
