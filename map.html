@@ -575,9 +575,95 @@
     .popup-info strong {
       color: var(--text-primary);
     }
+
+    /* Tooltip qui suit la souris */
+    .district-tooltip {
+      position: fixed;
+      background: rgba(26, 26, 26, 0.95);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      pointer-events: none;
+      z-index: 10000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      max-width: 300px;
+      line-height: 1.5;
+    }
+
+    .district-tooltip.visible {
+      opacity: 1;
+    }
+
+    .district-tooltip-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: var(--kaggle-blue);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .district-tooltip-activities {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 4px;
+    }
+
+    .district-tooltip-activities strong {
+      color: white;
+    }
+
+    /* Bouton Reset View */
+    .reset-view-btn {
+      margin-top: 12px;
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, var(--kaggle-blue), var(--kaggle-dark-blue));
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 6px rgba(32, 190, 255, 0.3);
+    }
+
+    .reset-view-btn:hover {
+      background: linear-gradient(135deg, #1aa8e6, #0a5f8f);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(32, 190, 255, 0.4);
+    }
+
+    .reset-view-btn:active {
+      transform: translateY(0);
+    }
+
+    .reset-view-btn i {
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
+
+  <!-- District Tooltip (suit la souris) -->
+  <div class="district-tooltip" id="districtTooltip">
+    <div class="district-tooltip-title">
+      <i class="ti ti-map-pin"></i>
+      <span id="tooltipDistrictName"></span>
+    </div>
+    <div class="district-tooltip-activities" id="tooltipActivities"></div>
+  </div>
 
   <!-- Header -->
   <header class="map-header">
@@ -621,6 +707,12 @@
         <!-- Les checkboxes des districts seront ajoutées dynamiquement ici -->
       </div>
     </div>
+
+    <!-- Bouton Reset View -->
+    <button class="reset-view-btn" id="resetViewBtn">
+      <i class="ti ti-refresh"></i>
+      Réinitialiser la vue
+    </button>
   </div>
 
 
@@ -767,9 +859,6 @@
       }),
       'top-right'
     );
-
-    // Contrôle plein écran
-    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
 
     // Échelle
     map.addControl(new mapboxgl.ScaleControl({
@@ -1083,6 +1172,11 @@
       // Variable pour suivre le district survolé
       let hoveredDistrictId = null;
 
+      // Éléments du tooltip
+      const tooltip = document.getElementById('districtTooltip');
+      const tooltipName = document.getElementById('tooltipDistrictName');
+      const tooltipActivities = document.getElementById('tooltipActivities');
+
       // Curseur pointer et effet hover sur les districts
       map.on('mouseenter', 'districts-fill', (e) => {
         map.getCanvas().style.cursor = 'pointer';
@@ -1095,11 +1189,34 @@
             );
           }
           hoveredDistrictId = e.features[0].id;
+          const feature = e.features[0];
+
           map.setFeatureState(
             { source: 'districts', id: hoveredDistrictId },
             { hover: true }
           );
+
+          // Afficher le tooltip avec les informations du district
+          const districtName = feature.properties.shapeName;
+          const activities = feature.properties.activities;
+
+          tooltipName.textContent = districtName;
+
+          if (activities && activities.activities && activities.activities.length > 0) {
+            const activityNames = activities.activities.map(a => a.name).join(', ');
+            tooltipActivities.innerHTML = `<strong>Activités:</strong> ${activityNames}<br><strong>Bénéficiaires:</strong> ${activities.beneficiaries}`;
+          } else {
+            tooltipActivities.innerHTML = '<strong>Aucune activité</strong>';
+          }
+
+          tooltip.classList.add('visible');
         }
+      });
+
+      // Suivre le mouvement de la souris
+      map.on('mousemove', 'districts-fill', (e) => {
+        tooltip.style.left = (e.originalEvent.clientX + 15) + 'px';
+        tooltip.style.top = (e.originalEvent.clientY + 15) + 'px';
       });
 
       map.on('mouseleave', 'districts-fill', () => {
@@ -1112,6 +1229,9 @@
           );
         }
         hoveredDistrictId = null;
+
+        // Masquer le tooltip
+        tooltip.classList.remove('visible');
       });
 
       // Réinitialiser la sélection en cliquant ailleurs sur la carte
@@ -1673,6 +1793,33 @@
         map.setLayoutProperty('districts-fill', 'visibility', visibility);
         map.setLayoutProperty('districts-labels', 'visibility', visibility);
       }
+    });
+
+    // Bouton Reset View
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      // Fermer le panneau d'information si ouvert
+      document.getElementById('district-info-panel').style.display = 'none';
+
+      // Réinitialiser la sélection du district
+      if (window.selectedDistrictId !== null) {
+        map.setFeatureState(
+          { source: 'districts', id: window.selectedDistrictId },
+          { selected: false }
+        );
+        window.selectedDistrictId = null;
+      }
+
+      // Animer le retour à la vue initiale
+      map.flyTo({
+        center: BANGUI_CENTER,
+        zoom: 11,
+        pitch: 0,
+        bearing: 0,
+        duration: 1500,
+        essential: true
+      });
+
+      console.log('🔄 Vue réinitialisée');
     });
 
     console.log('🗺️ Carte Mapbox initialisée avec succès !');
