@@ -1,0 +1,215 @@
+{
+  "name": "CVR Dashboard",
+  "short_name": "CVR Dashboard",
+  "version": "1.0.0",
+  "codename": "Anacarde",
+  "description": "Dashboard de suivi et d'analyse du Programme Communautés et Violence Reduction (CVR) - Initiative conjointe MINUSCA/UNOPS pour la réintégration communautaire en République Centrafricaine",
+  "author": {
+    "name": "UNOPS/MINUSCA",
+    "organization": "United Nations Office for Project Services",
+    "contact": "cvr-rca@unops.org"
+  },
+  "repository": {
+    "type": "local",
+    "path": "/Users/amegabosco/Documents/Projets/unops/CVR/DASHY"
+  },
+  "main": "dashboard.html",
+  "pages": {
+    "dashboard": {
+      "file": "dashboard.html",
+      "title": "CVR Dashboard - MINUSCA/UNOPS",
+      "description": "Vue d'ensemble avec KPIs, graphiques et statistiques",
+      "sections": [
+        "Hero avec statistiques principales",
+        "Indicateurs de performance",
+        "Graphiques de progression temporelle",
+        "Répartition géographique",
+        "Activités par district",
+        "Analyse des bénéficiaires"
+      ]
+    },
+    "map": {
+      "file": "map.html",
+      "title": "Mapping CVR - Bangui",
+      "description": "Cartographie interactive des districts de Bangui avec données CVR",
+      "features": [
+        "Carte Mapbox avec districts de Bangui (Arrondissements 1-8, Bimbo)",
+        "3 centres de formation géolocalisés",
+        "Panneau d'information par district (250px max height)",
+        "Système d'onglets: Statistiques, Activités, Graphiques",
+        "Recherche de districts et centres",
+        "Contrôles de couches (districts, centres)"
+      ]
+    },
+    "index": {
+      "file": "index_.html",
+      "title": "CVR - Page d'accueil",
+      "description": "Point d'entrée de l'application"
+    }
+  },
+  "features": {
+    "welcome_modal": {
+      "enabled": true,
+      "file": "dashboard.html",
+      "description": "Modal de bienvenue avec image teintée bleue et présentation du projet",
+      "image": "assetes/welc.jpg",
+      "local_storage_key": "cvr_hideWelcomeModal"
+    },
+    "interactive_map": {
+      "enabled": true,
+      "provider": "Mapbox GL JS",
+      "version": "v3.0.1",
+      "access_token_required": true,
+      "center": [18.5550, 4.3947],
+      "zoom": 11
+    },
+    "charts": {
+      "library": "Chart.js",
+      "version": "4.4.0",
+      "types": ["bar", "line", "doughnut", "pie"]
+    },
+    "navigation": {
+      "floating_menu": true,
+      "scroll_to_top": true,
+      "smooth_scroll": true
+    }
+  },
+  "assets": {
+    "styles": [
+      "kaggle-style.css"
+    ],
+    "icons": {
+      "library": "Tabler Icons",
+      "cdn": "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
+    },
+    "fonts": [
+      "Inter",
+      "Roboto Mono"
+    ],
+    "images": {
+      "welcome": "assetes/welc.jpg",
+      "welcome_backup": "assetes/welc_backup.png",
+      "logo": "assetes/logo.png"
+    },
+    "data": {
+      "geojson": "assetes/geoBoundaries-CAF-ADM3_simplified.geojson",
+      "districts": 9,
+      "training_centers": 3
+    }
+  },
+  "dependencies": {
+    "external": {
+      "mapbox-gl-js": {
+        "version": "3.0.1",
+        "cdn": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"
+      },
+      "mapbox-gl-geocoder": {
+        "version": "5.0.0",
+        "cdn": "https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"
+      },
+      "chart-js": {
+        "version": "4.4.0",
+        "cdn": "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+      },
+      "tabler-icons": {
+        "version": "latest",
+        "cdn": "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"
+      },
+      "google-fonts": {
+        "families": ["Inter:400,500,600,700", "Roboto Mono"],
+        "cdn": "https://fonts.googleapis.com"
+      }
+    }
+  },
+  "districts": {
+    "bangui": [
+      "Arrondissement 1",
+      "Arrondissement 2",
+      "Arrondissement 3",
+      "Arrondissement 4",
+      "Arrondissement 5",
+      "Arrondissement 6",
+      "Arrondissement 7",
+      "Arrondissement 8",
+      "Bimbo"
+    ],
+    "colors": [
+      "#E41A1C",
+      "#377EB8",
+      "#4DAF4A",
+      "#984EA3",
+      "#FF7F00",
+      "#FFFF33",
+      "#A65628",
+      "#F781BF",
+      "#999999"
+    ]
+  },
+  "training_centers": [
+    {
+      "name": "Centre de Formation PK5",
+      "type": "Formation professionnelle",
+      "capacity": 150,
+      "location": "PK5, 3ème Arrondissement",
+      "coordinates": [18.5583, 4.3947]
+    },
+    {
+      "name": "Centre Agropastoral Bimbo",
+      "type": "Formation agropastorale",
+      "capacity": 200,
+      "location": "Bimbo, Périphérie Sud",
+      "coordinates": [18.5200, 4.2500]
+    },
+    {
+      "name": "Centre Sensibilisation Begoua",
+      "type": "Sensibilisation communautaire",
+      "capacity": 120,
+      "location": "Begoua, Périphérie Nord",
+      "coordinates": [18.5550, 4.4400]
+    }
+  ],
+  "color_scheme": {
+    "primary": "#20BEFF",
+    "primary_dark": "#0C7BB3",
+    "secondary": "#1a5f8f",
+    "success": "#4CAF50",
+    "warning": "#FFC107",
+    "danger": "#F44336",
+    "info": "#2196F3"
+  },
+  "browser_support": {
+    "chrome": ">=90",
+    "firefox": ">=88",
+    "safari": ">=14",
+    "edge": ">=90"
+  },
+  "performance": {
+    "image_optimization": {
+      "welcome_image": {
+        "original": "1.5MB (PNG)",
+        "optimized": "320KB (JPEG 75%)",
+        "reduction": "80%"
+      }
+    }
+  },
+  "recent_updates": [
+    {
+      "date": "2025-11-05",
+      "version": "1.0.0",
+      "changes": [
+        "Ajout du modal de bienvenue avec image teintée bleue",
+        "Optimisation de l'image welc.png (1.5MB → 320KB)",
+        "Redesign du panneau district-info avec hauteur fixe 250px",
+        "Implémentation du système d'onglets (Statistiques, Activités, Graphiques)",
+        "Amélioration de l'UI responsive pour mobile/tablette"
+      ]
+    }
+  ],
+  "license": "Proprietary - UNOPS/MINUSCA",
+  "confidentiality": "Internal Use Only",
+  "location": {
+    "country": "République Centrafricaine",
+    "city": "Bangui",
+    "focus_area": "Districts 1-8 + Bimbo"
+  }
+}

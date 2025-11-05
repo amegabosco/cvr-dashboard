@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVR Dashboard - MINUSCA/UNOPS (Interactive)</title>
+  <link rel="stylesheet" href="kaggle-style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* Page Navigation Styles */
+    .page-container {
+      display: none;
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    .page-container.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-nav {
+      display: flex;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-xl);
+      padding: var(--spacing-md);
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 72px;
+      z-index: 100;
+    }
+
+    .page-nav-btn {
+      flex: 1;
+      padding: var(--spacing-md);
+      background: transparent;
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-base);
+    }
+
+    .page-nav-btn:hover {
+      border-color: var(--kaggle-blue);
+      color: var(--kaggle-blue);
+      background: rgba(32, 190, 255, 0.05);
+    }
+
+    .page-nav-btn.active {
+      background: var(--kaggle-blue);
+      color: white;
+      border-color: var(--kaggle-blue);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, var(--kaggle-blue) 0%, var(--kaggle-dark-blue) 100%);
+      color: white;
+      padding: var(--spacing-lg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      transition: transform var(--transition-base);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    .stat-card.secondary {
+      background: linear-gradient(135deg, var(--success) 0%, #22897F 100%);
+    }
+
+    .stat-card.tertiary {
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #0F1922 100%);
+    }
+
+    .stat-card.warning {
+      background: linear-gradient(135deg, var(--warning) 0%, #E6A100 100%);
+    }
+
+    .stat-value {
+      font-size: var(--text-4xl);
+      font-weight: 700;
+      margin-bottom: var(--spacing-xs);
+    }
+
+    .stat-label {
+      font-size: var(--text-sm);
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .stat-sublabel {
+      font-size: var(--text-xs);
+      opacity: 0.7;
+      margin-top: var(--spacing-xs);
+    }
+
+    /* Progress Bars */
+    .progress-container {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .progress-bar-bg {
+      height: 12px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--kaggle-blue), var(--kaggle-dark-blue));
+      border-radius: var(--radius-full);
+      transition: width 1s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* District Cards */
+    .district-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      transition: all var(--transition-base);
+      cursor: pointer;
+    }
+
+    .district-card:hover {
+      border-color: var(--kaggle-blue);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .district-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .district-name {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .district-total {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--kaggle-blue);
+    }
+
+    .district-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-md);
+      margin-top: var(--spacing-md);
+    }
+
+    .breakdown-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .breakdown-value {
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .breakdown-label {
+      font-size: var(--text-xs);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border-light);
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -34px;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--kaggle-blue);
+      border: 3px solid white;
+      box-shadow: 0 0 0 2px var(--kaggle-blue);
+    }
+
+    .timeline-item.completed::before {
+      background: var(--success);
+      box-shadow: 0 0 0 2px var(--success);
+    }
+
+    .timeline-item.pending::before {
+      background: var(--text-tertiary);
+      box-shadow: 0 0 0 2px var(--text-tertiary);
+    }
+
+    /* Info Box */
+    .info-box {
+      background: rgba(32, 190, 255, 0.1);
+      border-left: 4px solid var(--kaggle-blue);
+      padding: var(--spacing-md);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .info-box.warning {
+      background: rgba(255, 179, 0, 0.1);
+      border-left-color: var(--warning);
+    }
+
+    .info-box.success {
+      background: rgba(38, 166, 154, 0.1);
+      border-left-color: var(--success);
+    }
+
+    /* Chart Container */
+    .chart-container {
+      position: relative;
+      height: 400px;
+      padding: var(--spacing-md);
+    }
+
+    .chart-container-small {
+      position: relative;
+      height: 300px;
+      padding: var(--spacing-md);
+    }
+
+    /* Animated Counter */
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-count {
+      animation: countUp 0.6s ease-out;
+    }
+
+    /* Pulse Animation */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.8; }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    /* District Map Placeholder */
+    .map-district {
+      padding: var(--spacing-md);
+      margin: var(--spacing-xs);
+      background: var(--bg-card);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-base);
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .map-district:hover {
+      border-color: var(--kaggle-blue);
+      background: rgba(32, 190, 255, 0.05);
+      transform: scale(1.05);
+    }
+
+    .map-district.active {
+      border-color: var(--kaggle-blue);
+      background: rgba(32, 190, 255, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="site-header__nav">
+        <div class="flex items-center gap-md">
+          <div class="nav-logo">CVR Dashboard</div>
+          <span style="color: var(--text-tertiary); font-size: var(--text-sm);">MINUSCA / UNOPS CAR</span>
+        </div>
+        <div class="flex gap-md items-center">
+          <span style="color: var(--text-light); font-size: var(--text-sm);">Projet CVR 2025-2026</span>
+          <span class="badge badge-success pulse">Active</span>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mt-xl">
+
+    <!-- Page Navigation -->
+    <div class="page-nav">
+      <button class="page-nav-btn" onclick="showPage(1)">
+        <div>📊 Vue d'ensemble</div>
+        <div style="font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.8;">Overview</div>
+      </button>
+      <button class="page-nav-btn" onclick="showPage(2)">
+        <div>📍 Bénéficiaires</div>
+        <div style="font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.8;">Beneficiaries</div>
+      </button>
+      <button class="page-nav-btn" onclick="showPage(3)">
+        <div>📋 Activités</div>
+        <div style="font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.8;">Activities</div>
+      </button>
+      <button class="page-nav-btn active" onclick="showPage(4)">
+        <div>📈 Outputs Interactifs</div>
+        <div style="font-size: 11px; font-weight: 400; margin-top: 4px; opacity: 0.8;">Interactive Viz</div>
+      </button>
+    </div>
+
+    <!-- PAGE 4: INTERACTIVE VISUALIZATION -->
+    <div id="page-4" class="page-container active">
+      <h1>Visualisation Interactive des Outputs</h1>
+      <p class="mb-lg">Vue d'ensemble animée et interactive de la progression du projet</p>
+
+      <!-- Animated Stats -->
+      <div class="stats-grid">
+        <div class="stat-card animate-count">
+          <div class="stat-value" id="stat-total">275</div>
+          <div class="stat-label">Bénéficiaires Total</div>
+          <div class="stat-sublabel">100% de l'objectif atteint</div>
+        </div>
+
+        <div class="stat-card secondary animate-count" style="animation-delay: 0.1s">
+          <div class="stat-value" id="stat-outputs">6</div>
+          <div class="stat-label">Outputs Principaux</div>
+          <div class="stat-sublabel">En cours de mise en œuvre</div>
+        </div>
+
+        <div class="stat-card tertiary animate-count" style="animation-delay: 0.2s">
+          <div class="stat-value" id="stat-districts">10</div>
+          <div class="stat-label">Districts Couverts</div>
+          <div class="stat-sublabel">Bangui et périphérie</div>
+        </div>
+
+        <div class="stat-card warning animate-count" style="animation-delay: 0.3s">
+          <div class="stat-value" id="stat-activities">59</div>
+          <div class="stat-label">Activités Planifiées</div>
+          <div class="stat-sublabel">Sensibilisation & Formation</div>
+        </div>
+      </div>
+
+      <!-- District Distribution Chart -->
+      <div class="card mb-xl">
+        <div class="card__header">
+          <h3 class="card__title">Distribution des Bénéficiaires par District</h3>
+          <p class="card__subtitle">Visualisation interactive - Cliquez sur les légendes pour filtrer</p>
+        </div>
+        <div class="card__body">
+          <div class="chart-container">
+            <canvas id="districtChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Progress Charts -->
+      <div class="grid grid-cols-2 mb-xl">
+        <div class="card">
+          <div class="card__header">
+            <h3 class="card__title">Progression des Outputs</h3>
+            <p class="card__subtitle">État d'avancement par output</p>
+          </div>
+          <div class="card__body">
+            <div class="chart-container-small">
+              <canvas id="outputProgressChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h3 class="card__title">Répartition Ministère vs Comités</h3>
+            <p class="card__subtitle">275 bénéficiaires au total</p>
+          </div>
+          <div class="card__body">
+            <div class="chart-container-small">
+              <canvas id="sourceChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Districts Comparison -->
+      <div class="card mb-xl">
+        <div class="card__header">
+          <h3 class="card__title">Comparaison des Districts - Top 5</h3>
+          <p class="card__subtitle">Graphique à barres horizontal interactif</p>
+        </div>
+        <div class="card__body">
+          <div class="chart-container">
+            <canvas id="topDistrictsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive District Map -->
+      <div class="card mb-xl">
+        <div class="card__header">
+          <h3 class="card__title">Carte Interactive des Districts</h3>
+          <p class="card__subtitle">Cliquez sur un district pour voir les détails</p>
+        </div>
+        <div class="card__body">
+          <div class="grid grid-cols-3" id="districtMap">
+            <!-- Districts will be populated by JavaScript -->
+          </div>
+
+          <!-- Selected District Details -->
+          <div id="districtDetails" class="mt-lg" style="display: none;">
+            <h4 style="margin-bottom: 16px;">Détails du district sélectionné</h4>
+            <div class="grid grid-cols-3 gap-md">
+              <div class="card">
+                <h5 style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: 8px;">Total Bénéficiaires</h5>
+                <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--kaggle-blue);" id="detail-total">0</div>
+              </div>
+              <div class="card">
+                <h5 style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: 8px;">Ministère/COMNAT</h5>
+                <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--success);" id="detail-ministere">0</div>
+              </div>
+              <div class="card">
+                <h5 style="color: var(--text-secondary); font-size: var(--text-sm); margin-bottom: 8px;">Comités Locaux</h5>
+                <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--warning);" id="detail-comites">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activities Timeline Chart -->
+      <div class="card mb-xl">
+        <div class="card__header">
+          <h3 class="card__title">Répartition des Activités par Type</h3>
+          <p class="card__subtitle">Graphique en anneau - 59 activités totales</p>
+        </div>
+        <div class="card__body">
+          <div class="chart-container">
+            <canvas id="activitiesChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formation Breakdown -->
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title">Formations Agropastorales - Breakdown</h3>
+          <p class="card__subtitle">136 bénéficiaires dans 3 secteurs</p>
+        </div>
+        <div class="card__body">
+          <div class="chart-container-small">
+            <canvas id="agroChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer style="background: var(--bg-dark); color: var(--text-light); padding: 48px 0; margin-top: 64px;">
+    <div class="container">
+      <div class="grid grid-cols-3">
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Projet CVR</h4>
+          <p style="opacity: 0.8; line-height: 1.6;">
+            Programme de Réduction de la Violence Communautaire en République Centrafricaine
+          </p>
+        </div>
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Partenaires</h4>
+          <ul style="list-style: none; line-height: 2; opacity: 0.8;">
+            <li>MINUSCA DDR Section</li>
+            <li>UNOPS CAR</li>
+            <li>Gouvernement RCA</li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Période</h4>
+          <p style="opacity: 0.8;">2025-2026</p>
+          <p style="opacity: 0.8; margin-top: 16px;">
+            <span class="badge badge-success">Projet Actif</span>
+          </p>
+        </div>
+      </div>
+      <div style="text-align: center; padding-top: 32px; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.1); opacity: 0.6;">
+        <p>&copy; 2025 MINUSCA/UNOPS - CVR Dashboard</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // District Data
+    const districtData = [
+      { name: '2e Arr.', ministere: 13, comites: 7, total: 20 },
+      { name: '3e Arr.', ministere: 3, comites: 17, total: 20 },
+      { name: '4e Arr.', ministere: 15, comites: 5, total: 20 },
+      { name: '5e Arr.', ministere: 23, comites: 7, total: 30 },
+      { name: '6e Arr.', ministere: 2, comites: 18, total: 20 },
+      { name: '7e Arr.', ministere: 7, comites: 13, total: 20 },
+      { name: '8e Arr.', ministere: 47, comites: 0, total: 47 },
+      { name: '9e Arr.', ministere: 2, comites: 18, total: 20 },
+      { name: 'BEGOUA', ministere: 53, comites: 0, total: 53 },
+      { name: 'BIMBO', ministere: 10, comites: 15, total: 25 }
+    ];
+
+    // Color Palette
+    const colors = {
+      primary: '#20BEFF',
+      secondary: '#26A69A',
+      warning: '#FFB300',
+      danger: '#E53935',
+      dark: '#1C2A3A',
+      success: '#26A69A'
+    };
+
+    // Chart.js Global Configuration
+    Chart.defaults.font.family = "'Inter', -apple-system, sans-serif";
+    Chart.defaults.color = '#5C6E7E';
+
+    // 1. District Distribution Chart
+    const districtCtx = document.getElementById('districtChart').getContext('2d');
+    const districtChart = new Chart(districtCtx, {
+      type: 'bar',
+      data: {
+        labels: districtData.map(d => d.name),
+        datasets: [
+          {
+            label: 'Ministère/COMNAT',
+            data: districtData.map(d => d.ministere),
+            backgroundColor: colors.primary,
+            borderRadius: 6
+          },
+          {
+            label: 'Comités Locaux',
+            data: districtData.map(d => d.comites),
+            backgroundColor: colors.secondary,
+            borderRadius: 6
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, beginAtZero: true }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          title: { display: false }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeInOutQuart'
+        }
+      }
+    });
+
+    // 2. Output Progress Chart (Radar)
+    const outputProgressCtx = document.getElementById('outputProgressChart').getContext('2d');
+    const outputProgressChart = new Chart(outputProgressCtx, {
+      type: 'radar',
+      data: {
+        labels: ['Output 1', 'Output 2', 'Output 3', 'Output 4', 'Output 5', 'Output 6'],
+        datasets: [{
+          label: 'Progression (%)',
+          data: [0, 25, 0, 0, 0, 50], // Example progress values
+          backgroundColor: 'rgba(32, 190, 255, 0.2)',
+          borderColor: colors.primary,
+          borderWidth: 2,
+          pointBackgroundColor: colors.primary,
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: colors.primary
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { stepSize: 20 }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        },
+        animation: {
+          duration: 2000
+        }
+      }
+    });
+
+    // 3. Source Distribution Chart (Pie)
+    const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+    const sourceChart = new Chart(sourceCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Ministère/COMNAT', 'Comités Locaux'],
+        datasets: [{
+          data: [175, 100],
+          backgroundColor: [colors.primary, colors.secondary],
+          borderWidth: 0,
+          hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = 275;
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: ${value} (${percentage}%)`;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          animateScale: true,
+          duration: 1500
+        }
+      }
+    });
+
+    // 4. Top Districts Chart (Horizontal Bar)
+    const topDistrictsCtx = document.getElementById('topDistrictsChart').getContext('2d');
+    const topDistricts = districtData.sort((a, b) => b.total - a.total).slice(0, 5);
+    const topDistrictsChart = new Chart(topDistrictsCtx, {
+      type: 'bar',
+      data: {
+        labels: topDistricts.map(d => d.name),
+        datasets: [{
+          label: 'Total Bénéficiaires',
+          data: topDistricts.map(d => d.total),
+          backgroundColor: topDistricts.map((d, i) => {
+            const colors_arr = [colors.primary, colors.secondary, colors.warning, '#8C9AA6', '#D1D5DB'];
+            return colors_arr[i];
+          }),
+          borderRadius: 8
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { beginAtZero: true, grid: { display: true } },
+          y: { grid: { display: false } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.parsed.x} bénéficiaires`;
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeInOutQuart'
+        }
+      }
+    });
+
+    // 5. Activities Chart (Doughnut)
+    const activitiesCtx = document.getElementById('activitiesChart').getContext('2d');
+    const activitiesChart = new Chart(activitiesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: [
+          'Sensibilisation CVR (6)',
+          'Comités locaux (6)',
+          'Cohésion sociale (6)',
+          'Sensibilisation SALW (6)',
+          'Désarmement civil (12)',
+          'NATCOM-SALW (23)'
+        ],
+        datasets: [{
+          data: [6, 6, 6, 6, 12, 23],
+          backgroundColor: [
+            colors.primary,
+            colors.secondary,
+            colors.warning,
+            '#8C9AA6',
+            '#D1D5DB',
+            colors.danger
+          ],
+          borderWidth: 2,
+          borderColor: '#fff',
+          hoverOffset: 15
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'right' },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const total = 59;
+                const value = context.parsed;
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `${context.label}: ${percentage}%`;
+              }
+            }
+          }
+        },
+        animation: {
+          animateRotate: true,
+          duration: 2000
+        }
+      }
+    });
+
+    // 6. Agropastoral Training Chart
+    const agroCtx = document.getElementById('agroChart').getContext('2d');
+    const agroChart = new Chart(agroCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Élevage de volaille', 'Maraîchage', 'Pisciculture'],
+        datasets: [{
+          label: 'Bénéficiaires',
+          data: [61, 45, 30],
+          backgroundColor: [colors.warning, colors.secondary, colors.primary],
+          borderRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true }
+        },
+        plugins: {
+          legend: { display: false }
+        },
+        animation: {
+          duration: 1500
+        }
+      }
+    });
+
+    // Interactive District Map
+    function populateDistrictMap() {
+      const mapContainer = document.getElementById('districtMap');
+      districtData.forEach((district, index) => {
+        const districtDiv = document.createElement('div');
+        districtDiv.className = 'map-district';
+        districtDiv.innerHTML = `
+          <h4 style="margin-bottom: 8px; font-size: var(--text-lg);">${district.name}</h4>
+          <div style="font-size: var(--text-3xl); font-weight: 700; color: var(--kaggle-blue);">${district.total}</div>
+          <div style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 4px;">bénéficiaires</div>
+        `;
+        districtDiv.onclick = () => selectDistrict(district, districtDiv);
+        mapContainer.appendChild(districtDiv);
+      });
+    }
+
+    function selectDistrict(district, element) {
+      // Remove active class from all
+      document.querySelectorAll('.map-district').forEach(d => d.classList.remove('active'));
+      // Add active to selected
+      element.classList.add('active');
+
+      // Show details
+      document.getElementById('districtDetails').style.display = 'block';
+      document.getElementById('detail-total').textContent = district.total;
+      document.getElementById('detail-ministere').textContent = district.ministere;
+      document.getElementById('detail-comites').textContent = district.comites;
+    }
+
+    // Page Navigation
+    function showPage(pageNum) {
+      alert(`Navigation vers la page ${pageNum}. Cette fonctionnalité nécessite le fichier dashboard.html complet.`);
+    }
+
+    // Initialize
+    window.addEventListener('load', function() {
+      populateDistrictMap();
+    });
+  </script>
+
+</body>
+</html>

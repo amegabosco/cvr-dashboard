@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapping CVR - MINUSCA/UNOPS</title>
+
+  <!-- Mapbox GL JS -->
+  <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+  <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+
+  <!-- Mapbox GL Geocoder (pour la recherche) -->
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
+
+  <!-- Styles communs -->
+  <link rel="stylesheet" href="kaggle-style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    /* Header */
+    .map-header {
+      background: var(--bg-dark);
+      color: var(--text-light);
+      padding: 12px 20px;
+      box-shadow: var(--shadow-md);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .map-header h1 {
+      margin: 0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-button {
+      background: var(--kaggle-blue);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .back-button:hover {
+      background: var(--kaggle-dark-blue);
+      transform: translateY(-1px);
+    }
+
+    /* Map Container */
+    #map {
+      position: absolute;
+      top: 60px;
+      bottom: 0;
+      width: 100%;
+    }
+
+
+    /* Legend */
+    .map-legend {
+      position: absolute;
+      bottom: 30px;
+      left: 20px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .legend-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0;
+      font-size: 13px;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* Layer Controls */
+    .layer-controls {
+      position: absolute;
+      top: 160px; /* Descendu pour laisser place au geocoder */
+      left: 20px;
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .layer-controls label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .layer-controls input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .districts-control {
+      margin: 0;
+    }
+
+    .districts-submenu {
+      background: #f8f8f8;
+      border-left: 2px solid #e0e0e0;
+      padding: 8px 0 8px 8px;
+      border-radius: 4px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .districts-submenu label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 4px 0;
+      font-size: 13px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: background 0.2s;
+    }
+
+    .districts-submenu label:hover {
+      background: #e8e8e8;
+    }
+
+    .district-color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.2);
+      flex-shrink: 0;
+    }
+
+    /* Panneau flottant contextuel */
+    #district-info-panel {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: calc(80% - 40px); /* 80% avec marges */
+      max-width: calc(100vw - 280px); /* Largeur max - espace pour légende (200px) + marges (2x20px + 2x20px) */
+      height: 250px;
+      max-height: 250px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 200;
+      animation: slideIn 0.3s ease-out;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, var(--kaggle-blue), var(--kaggle-dark-blue));
+      color: white;
+      border-radius: 8px 8px 0 0;
+      border-bottom: 2px solid rgba(0,0,0,0.1);
+      min-height: 36px;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      color: white;
+    }
+
+    .panel-title i {
+      font-size: 16px;
+    }
+
+    .panel-close {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+
+    .panel-close:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .panel-close i {
+      font-size: 14px;
+    }
+
+    /* Système d'onglets */
+    .panel-tabs {
+      display: flex;
+      background: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+      flex-shrink: 0;
+    }
+
+    .panel-tab {
+      flex: 1;
+      padding: 6px 10px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      color: #6c757d;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .panel-tab:hover {
+      background: #e9ecef;
+      color: #495057;
+    }
+
+    .panel-tab.active {
+      background: white;
+      color: var(--kaggle-blue);
+      border-bottom-color: var(--kaggle-blue);
+    }
+
+    .panel-tab i {
+      font-size: 14px;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+      min-height: 0;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    .activity-summary h4 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin: 0;
+    }
+
+    .stat-box {
+      background: #f8f9fa;
+      padding: 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #e9ecef;
+      transition: all 0.2s;
+    }
+
+    .stat-box:hover {
+      background: #e9ecef;
+      transform: translateY(-1px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .stat-box i {
+      font-size: 18px;
+      color: var(--kaggle-blue);
+      flex-shrink: 0;
+    }
+
+    .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .stat-label {
+      font-size: 8px;
+      color: #6c757d;
+      text-transform: uppercase;
+      font-weight: 500;
+      line-height: 1.1;
+    }
+
+    .stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #212529;
+      line-height: 1.1;
+    }
+
+    .activities-list {
+      margin: 0;
+    }
+
+    .activities-list h5 {
+      margin: 0 0 4px 0;
+      font-size: 11px;
+      color: #495057;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .activity-item {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-radius: 3px;
+      padding: 4px 6px;
+      margin-bottom: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s;
+    }
+
+    .activity-item:hover {
+      border-color: var(--kaggle-blue);
+      background: #f8f9ff;
+    }
+
+    .activity-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .activity-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      background: var(--kaggle-blue);
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .activity-details {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .activity-name {
+      font-weight: 600;
+      font-size: 11px;
+      color: #212529;
+      line-height: 1.1;
+    }
+
+    .activity-meta {
+      font-size: 9px;
+      color: #6c757d;
+      line-height: 1.1;
+    }
+
+    .activity-status {
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .status-active {
+      background: #d1f4e0;
+      color: #0f5132;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-completed {
+      background: #d1e7fd;
+      color: #084298;
+    }
+
+    .charts-section {
+      margin: 0;
+      padding: 0;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 6px;
+    }
+
+    .chart-container {
+      background: #f8f9fa;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+    }
+
+    .chart-container h5 {
+      margin: 0 0 4px 0;
+      font-size: 10px;
+      color: #495057;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-weight: 600;
+    }
+
+    .chart-container canvas {
+      max-height: 100px !important;
+    }
+
+    @media (max-width: 768px) {
+      #district-info-panel {
+        width: calc(100vw - 40px);
+        right: 20px;
+        left: 20px;
+        bottom: 10px;
+        max-width: none;
+        height: 250px;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+
+      .map-legend {
+        bottom: auto;
+        top: 80px;
+        max-width: 180px;
+      }
+    }
+
+    @media (min-width: 769px) and (max-width: 1200px) {
+      #district-info-panel {
+        width: calc(75% - 40px);
+        max-width: calc(100vw - 260px);
+        height: 250px;
+      }
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 999;
+      text-align: center;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--kaggle-blue);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Popup customization */
+    .mapboxgl-popup-content {
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .popup-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--kaggle-blue);
+      margin-bottom: 8px;
+    }
+
+    .popup-info {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .popup-info strong {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="map-header">
+    <h1>
+      <i class="ti ti-map-2"></i>
+      Mapping CVR - Bangui
+    </h1>
+    <button class="back-button" onclick="window.location.href='dashboard.html'">
+      <i class="ti ti-arrow-left"></i>
+      Retour au Dashboard
+    </button>
+  </header>
+
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner"></div>
+    <p style="color: var(--text-secondary);">
+      <i class="ti ti-map-pin"></i> Chargement de la carte...
+    </p>
+  </div>
+
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <!-- Layer Controls -->
+  <div class="layer-controls">
+    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+      <i class="ti ti-layers-linked"></i> Couches
+    </div>
+    <label>
+      <input type="checkbox" id="toggle-training-centers" checked>
+      Centres de Formation
+    </label>
+    <div class="districts-control">
+      <label style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="toggle-districts" checked>
+        <span>Districts</span>
+        <i class="ti ti-chevron-down" id="districts-toggle-icon" style="margin-left: auto; font-size: 16px; cursor: pointer; transition: transform 0.2s;"></i>
+      </label>
+      <div id="districts-submenu" class="districts-submenu" style="display: none; margin-left: 26px; margin-top: 4px;">
+        <!-- Les checkboxes des districts seront ajoutées dynamiquement ici -->
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Legend -->
+  <div class="map-legend">
+    <div class="legend-title">
+      <i class="ti ti-list-details"></i> Légende
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #FF6B35;">
+        <i class="ti ti-school" style="color: white; font-size: 14px;"></i>
+      </div>
+      <span>Centres de Formation</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: linear-gradient(90deg, #E41A1C 11%, #377EB8 22%, #4DAF4A 33%, #984EA3 44%, #FF7F00 55%, #FFFF33 66%, #A65628 77%, #F781BF 88%, #999999 99%);">
+      </div>
+      <span>Districts (couleurs variées)</span>
+    </div>
+    <div style="font-size: 11px; color: #666; margin-top: 8px; padding-left: 8px;">
+      <i class="ti ti-hand-click" style="font-size: 10px;"></i> Cliquez sur un district pour zoomer
+    </div>
+  </div>
+
+  <!-- Panneau flottant contextuel -->
+  <div id="district-info-panel" class="mapboxgl-ctrl" style="display: none;">
+    <div class="panel-header">
+      <div class="panel-title">
+        <i class="ti ti-info-circle"></i>
+        <span id="panel-district-name">District</span>
+      </div>
+      <button class="panel-close" id="close-panel">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <!-- Onglets -->
+    <div class="panel-tabs">
+      <button class="panel-tab active" data-tab="stats">
+        <i class="ti ti-chart-bar"></i> Statistiques
+      </button>
+      <button class="panel-tab" data-tab="activities">
+        <i class="ti ti-list"></i> Activités
+      </button>
+      <button class="panel-tab" data-tab="charts">
+        <i class="ti ti-chart-pie"></i> Graphiques
+      </button>
+    </div>
+
+    <div class="panel-content">
+      <!-- Onglet Statistiques -->
+      <div class="tab-pane active" id="tab-stats">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <i class="ti ti-users"></i>
+            <div class="stat-info">
+              <span class="stat-label">Bénéficiaires</span>
+              <span class="stat-value" id="panel-beneficiaries">0</span>
+            </div>
+          </div>
+          <div class="stat-box">
+            <i class="ti ti-school"></i>
+            <div class="stat-info">
+              <span class="stat-label">Formations</span>
+              <span class="stat-value" id="panel-trainings">0</span>
+            </div>
+          </div>
+          <div class="stat-box">
+            <i class="ti ti-briefcase"></i>
+            <div class="stat-info">
+              <span class="stat-label">Sessions</span>
+              <span class="stat-value" id="panel-sessions">0</span>
+            </div>
+          </div>
+          <div class="stat-box">
+            <i class="ti ti-calendar-check"></i>
+            <div class="stat-info">
+              <span class="stat-label">Complétées</span>
+              <span class="stat-value" id="panel-completed">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet Activités -->
+      <div class="tab-pane" id="tab-activities">
+        <div class="activities-list">
+          <h5><i class="ti ti-list"></i> Activités en cours</h5>
+          <div id="panel-activities">
+            <!-- Activités ajoutées dynamiquement -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet Graphiques -->
+      <div class="tab-pane" id="tab-charts">
+        <div class="charts-section">
+          <div class="chart-row">
+            <div class="chart-container">
+              <h5><i class="ti ti-chart-line"></i> Progression</h5>
+              <canvas id="trainings-chart" width="400" height="100"></canvas>
+            </div>
+            <div class="chart-container">
+              <h5><i class="ti ti-chart-pie"></i> H/F</h5>
+              <canvas id="gender-chart" width="200" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <script>
+    // Configuration Mapbox
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYW1lZ2Fib3NjbyIsImEiOiJ0SWE0WktNIn0.Dhoe8NU0itRsIY9iYL5b2A';
+
+    // Coordonnées de Bangui
+    const BANGUI_CENTER = [18.5550, 4.3947];
+
+    // Initialisation de la carte
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12', // Style de la carte
+      center: BANGUI_CENTER,
+      zoom: 11,
+      pitch: 0,
+      bearing: 0
+    });
+
+    // Contrôles de navigation
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+    // Contrôle de géolocalisation
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true,
+        showUserHeading: true
+      }),
+      'top-right'
+    );
+
+    // Contrôle plein écran
+    map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+
+    // Échelle
+    map.addControl(new mapboxgl.ScaleControl({
+      maxWidth: 100,
+      unit: 'metric'
+    }), 'bottom-right');
+
+    // Variable globale pour stocker les districts et centres
+    window.searchableItems = {
+      districts: [],
+      centers: []
+    };
+
+    // Fonction de recherche locale personnalisée
+    function localGeocoderSearch(query) {
+      const matchingFeatures = [];
+      const searchQuery = query.toLowerCase();
+
+      // Chercher dans les districts
+      window.searchableItems.districts.forEach((district, index) => {
+        if (district.name.toLowerCase().includes(searchQuery)) {
+          matchingFeatures.push({
+            id: 'district-' + index,
+            type: 'Feature',
+            place_type: ['district'],
+            place_name: district.name + ', Bangui',
+            text: district.name,
+            center: district.center,
+            properties: {
+              type: 'district',
+              districtId: district.id,
+              color: district.color,
+              activities: district.activities
+            }
+          });
+        }
+      });
+
+      // Chercher dans les centres de formation
+      window.searchableItems.centers.forEach((center, index) => {
+        if (center.name.toLowerCase().includes(searchQuery)) {
+          matchingFeatures.push({
+            id: 'center-' + index,
+            type: 'Feature',
+            place_type: ['poi'],
+            place_name: center.name + ' - ' + center.type,
+            text: center.name,
+            center: center.coordinates,
+            properties: {
+              type: 'training-center',
+              ...center
+            }
+          });
+        }
+      });
+
+      return matchingFeatures;
+    }
+
+    // Geocoder avec recherche locale
+    const geocoder = new MapboxGeocoder({
+      accessToken: mapboxgl.accessToken,
+      mapboxgl: mapboxgl,
+      placeholder: 'Rechercher district, centre ou lieu...',
+      proximity: {
+        longitude: BANGUI_CENTER[0],
+        latitude: BANGUI_CENTER[1]
+      },
+      countries: 'CF',
+      localGeocoder: localGeocoderSearch,
+      localGeocoderOnly: false, // Permet aussi la recherche Mapbox
+      marker: false // Désactiver le marqueur par défaut
+    });
+
+    map.addControl(geocoder, 'top-left');
+
+    // Écouter les résultats de recherche
+    geocoder.on('result', (e) => {
+      const result = e.result;
+
+      if (result.properties && result.properties.type === 'district') {
+        // Si c'est un district, zoomer dessus et afficher le panneau
+        console.log('🔍 Recherche: District trouvé -', result.text);
+
+        // Trouver le feature du district
+        const districtFeature = {
+          properties: {
+            shapeName: result.text,
+            color: result.properties.color,
+            activities: result.properties.activities
+          },
+          id: result.properties.districtId,
+          geometry: { type: 'Point', coordinates: result.center }
+        };
+
+        // Sélectionner le district
+        if (window.selectedDistrictId !== null) {
+          map.setFeatureState(
+            { source: 'districts', id: window.selectedDistrictId },
+            { selected: false }
+          );
+        }
+
+        window.selectedDistrictId = result.properties.districtId;
+        map.setFeatureState(
+          { source: 'districts', id: result.properties.districtId },
+          { selected: true }
+        );
+
+        // Afficher le panneau
+        window.showDistrictPanel(result.text, result.properties.activities, result.properties.color);
+
+        // Zoomer sur le district
+        map.flyTo({
+          center: result.center,
+          zoom: 13,
+          duration: 1500
+        });
+
+      } else if (result.properties && result.properties.type === 'training-center') {
+        // Si c'est un centre de formation, zoomer dessus
+        console.log('🔍 Recherche: Centre trouvé -', result.text);
+
+        map.flyTo({
+          center: result.center,
+          zoom: 15,
+          duration: 1500
+        });
+
+        // Afficher un popup
+        new mapboxgl.Popup()
+          .setLngLat(result.center)
+          .setHTML(`
+            <div class="popup-title">${result.properties.name}</div>
+            <div class="popup-info">
+              <strong>Type:</strong> ${result.properties.type}<br>
+              <strong>Capacité:</strong> ${result.properties.capacity} personnes<br>
+              <strong>Adresse:</strong> ${result.properties.address}
+            </div>
+          `)
+          .addTo(map);
+      }
+    });
+
+    // Centres de formation (3 sites)
+    const trainingCenters = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [18.5583, 4.3947] // Centre-ville Bangui
+          },
+          properties: {
+            name: 'Centre de Formation PK5',
+            type: 'Formation professionnelle',
+            capacity: 150,
+            address: 'PK5, 3ème Arrondissement',
+            status: 'Actif'
+          }
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [18.5200, 4.2500] // Bimbo
+          },
+          properties: {
+            name: 'Centre Agropastoral Bimbo',
+            type: 'Formation agropastorale',
+            capacity: 200,
+            address: 'Bimbo, Périphérie Sud',
+            status: 'Actif'
+          }
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [18.5550, 4.4400] // Begoua
+          },
+          properties: {
+            name: 'Centre Sensibilisation Begoua',
+            type: 'Sensibilisation communautaire',
+            capacity: 120,
+            address: 'Begoua, Périphérie Nord',
+            status: 'Actif'
+          }
+        }
+      ]
+    };
+
+    // Quand la carte est chargée
+    map.on('load', () => {
+      // Masquer le spinner
+      document.getElementById('loadingSpinner').style.display = 'none';
+
+      // Ajouter les centres de formation
+      map.addSource('training-centers', {
+        type: 'geojson',
+        data: trainingCenters
+      });
+
+      // Icône pour les centres de formation (school)
+      const iconTraining = new Image(48, 48);
+      iconTraining.onload = () => {
+        if (!map.hasImage('icon-training')) map.addImage('icon-training', iconTraining);
+      };
+      iconTraining.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <defs>
+            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+              <feOffset dx="0" dy="2" result="offsetblur"/>
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.6"/>
+              </feComponentTransfer>
+              <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <circle cx="12" cy="12" r="11" fill="#FF6B35" stroke="white" stroke-width="3" filter="url(#shadow)"/>
+          <g stroke="white" stroke-width="1.8" fill="none">
+            <path d="M22 9L12 5L2 9l10 4l10-4z"/>
+            <path d="M6 10.6V16a6 6 0 0 0 12 0v-5.4"/>
+          </g>
+        </svg>
+      `);
+
+      // Ajouter le calque des centres de formation
+      map.addLayer({
+        id: 'training-centers-layer',
+        type: 'symbol',
+        source: 'training-centers',
+        layout: {
+          'icon-image': 'icon-training',
+          'icon-size': 1,
+          'icon-allow-overlap': true,
+          'visibility': 'visible'
+        },
+        paint: {
+          'icon-opacity': 1,
+          'icon-halo-color': 'rgba(0, 0, 0, 0.3)',
+          'icon-halo-width': 2,
+          'icon-halo-blur': 3
+        }
+      });
+
+      // Labels pour les centres
+      map.addLayer({
+        id: 'training-centers-labels',
+        type: 'symbol',
+        source: 'training-centers',
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+          'text-size': 13,
+          'text-offset': [0, 2],
+          'text-anchor': 'top',
+          'visibility': 'visible'
+        },
+        paint: {
+          'text-color': '#1a1a1a',
+          'text-halo-color': '#fff',
+          'text-halo-width': 2.5
+        }
+      });
+
+      // Popup au clic sur les centres de formation
+      map.on('click', 'training-centers-layer', (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const { name, type, capacity, address, status } = e.features[0].properties;
+
+        new mapboxgl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`
+            <div class="popup-title">${name}</div>
+            <div class="popup-info">
+              <strong>Type:</strong> ${type}<br>
+              <strong>Adresse:</strong> ${address}<br>
+              <strong>Capacité:</strong> ${capacity} personnes<br>
+              <strong>Statut:</strong> <span style="color: #4CAF50;">${status}</span>
+            </div>
+          `)
+          .addTo(map);
+      });
+
+      // Curseur pointer sur les centres
+      map.on('mouseenter', 'training-centers-layer', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'training-centers-layer', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
+      // Peupler window.searchableItems.centers pour la recherche
+      window.searchableItems.centers = trainingCenters.features.map((feature, index) => ({
+        id: index,
+        name: feature.properties.name,
+        type: feature.properties.type,
+        coordinates: feature.geometry.coordinates,
+        capacity: feature.properties.capacity,
+        address: feature.properties.address,
+        status: feature.properties.status
+      }));
+      console.log('🔍 Centres indexés pour la recherche:', window.searchableItems.centers.length);
+
+      // Variable pour suivre le district survolé
+      let hoveredDistrictId = null;
+
+      // Curseur pointer et effet hover sur les districts
+      map.on('mouseenter', 'districts-fill', (e) => {
+        map.getCanvas().style.cursor = 'pointer';
+
+        if (e.features.length > 0) {
+          if (hoveredDistrictId !== null) {
+            map.setFeatureState(
+              { source: 'districts', id: hoveredDistrictId },
+              { hover: false }
+            );
+          }
+          hoveredDistrictId = e.features[0].id;
+          map.setFeatureState(
+            { source: 'districts', id: hoveredDistrictId },
+            { hover: true }
+          );
+        }
+      });
+
+      map.on('mouseleave', 'districts-fill', () => {
+        map.getCanvas().style.cursor = '';
+
+        if (hoveredDistrictId !== null) {
+          map.setFeatureState(
+            { source: 'districts', id: hoveredDistrictId },
+            { hover: false }
+          );
+        }
+        hoveredDistrictId = null;
+      });
+
+      // Réinitialiser la sélection en cliquant ailleurs sur la carte
+      map.on('click', (e) => {
+        const features = map.queryRenderedFeatures(e.point, { layers: ['districts-fill'] });
+
+        // Si on clique en dehors d'un district, réinitialiser la sélection
+        if (features.length === 0 && window.selectedDistrictId !== null) {
+          map.setFeatureState(
+            { source: 'districts', id: window.selectedDistrictId },
+            { selected: false }
+          );
+          window.selectedDistrictId = null;
+          console.log('🔄 Sélection réinitialisée');
+        }
+      });
+
+      // Charger le GeoJSON des districts de Bangui EN PREMIER
+      fetch('assetes/geoBoundaries-CAF-ADM3_simplified.geojson')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Erreur HTTP: ' + response.status);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('📂 GeoJSON chargé, features totales:', data.features.length);
+
+          // Filtrer les arrondissements de Bangui (1-8), Bimbo et zones périphériques
+          const banguiDistricts = {
+            type: 'FeatureCollection',
+            features: data.features.filter(feature => {
+              const name = feature.properties.shapeName;
+              // Arrondissements 1-8, Bimbo, et autres zones périphériques de Bangui
+              return name && (
+                name.match(/^Arrondissement [1-8]$/) ||
+                name === 'Bimbo' ||
+                name.match(/Begoua/i) ||
+                name.match(/Bangui/i)
+              );
+            })
+          };
+
+          console.log('🏙️ Districts de Bangui filtrés:', banguiDistricts.features.length);
+          banguiDistricts.features.forEach(f => console.log('  -', f.properties.shapeName));
+
+          // Palette de couleurs pour les districts
+          const districtColors = [
+            '#E41A1C', '#377EB8', '#4DAF4A', '#984EA3', '#FF7F00',
+            '#FFFF33', '#A65628', '#F781BF', '#999999'
+          ];
+
+          // Données d'activités simulées pour chaque district
+          const districtActivities = {
+            'Arrondissement 1': { beneficiaries: 45, trainings: 3, sessions: 12, completed: 75, men: 28, women: 17, activities: [
+              { name: 'Formation Menuiserie', date: 'Nov 2025', status: 'active' },
+              { name: 'Soutien Psychosocial', date: 'Oct 2025', status: 'completed' }
+            ]},
+            'Arrondissement 2': { beneficiaries: 38, trainings: 2, sessions: 8, completed: 60, men: 22, women: 16, activities: [
+              { name: 'Formation Maçonnerie', date: 'Nov 2025', status: 'active' }
+            ]},
+            'Arrondissement 3': { beneficiaries: 52, trainings: 4, sessions: 15, completed: 80, men: 30, women: 22, activities: [
+              { name: 'Agriculture Urbaine', date: 'Nov 2025', status: 'active' },
+              { name: 'Couture', date: 'Oct 2025', status: 'completed' }
+            ]},
+            'Arrondissement 4': { beneficiaries: 41, trainings: 3, sessions: 10, completed: 70, men: 25, women: 16, activities: [
+              { name: 'Mécanique Auto', date: 'Nov 2025', status: 'pending' }
+            ]},
+            'Arrondissement 5': { beneficiaries: 60, trainings: 5, sessions: 18, completed: 85, men: 35, women: 25, activities: [
+              { name: 'Électricité', date: 'Nov 2025', status: 'active' },
+              { name: 'Plomberie', date: 'Nov 2025', status: 'active' }
+            ]},
+            'Arrondissement 6': { beneficiaries: 35, trainings: 2, sessions: 7, completed: 55, men: 20, women: 15, activities: [
+              { name: 'Coiffure', date: 'Oct 2025', status: 'active' }
+            ]},
+            'Arrondissement 7': { beneficiaries: 44, trainings: 3, sessions: 11, completed: 65, men: 26, women: 18, activities: [
+              { name: 'Informatique', date: 'Nov 2025', status: 'active' }
+            ]},
+            'Arrondissement 8': { beneficiaries: 58, trainings: 4, sessions: 16, completed: 90, men: 32, women: 26, activities: [
+              { name: 'Restauration', date: 'Nov 2025', status: 'active' },
+              { name: 'Pâtisserie', date: 'Oct 2025', status: 'completed' }
+            ]},
+            'Bimbo': { beneficiaries: 48, trainings: 3, sessions: 13, completed: 72, men: 29, women: 19, activities: [
+              { name: 'Agropastoral', date: 'Nov 2025', status: 'active' }
+            ]}
+          };
+
+          // Fonction helper pour calculer les bounds d'une géométrie
+          function getBoundsForFeature(geometry) {
+            let minLng = Infinity, minLat = Infinity;
+            let maxLng = -Infinity, maxLat = -Infinity;
+
+            function processCoordinates(coords) {
+              if (Array.isArray(coords[0])) {
+                coords.forEach(processCoordinates);
+              } else {
+                const [lng, lat] = coords;
+                minLng = Math.min(minLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLng = Math.max(maxLng, lng);
+                maxLat = Math.max(maxLat, lat);
+              }
+            }
+
+            processCoordinates(geometry.coordinates);
+            return [[minLng, minLat], [maxLng, maxLat]];
+          }
+
+          // Assigner une couleur, un ID et des activités à chaque district
+          banguiDistricts.features.forEach((feature, index) => {
+            feature.id = index; // Ajouter un ID unique
+            feature.properties.color = districtColors[index % districtColors.length];
+            feature.properties.activities = districtActivities[feature.properties.shapeName] || {
+              beneficiaries: 0, trainings: 0, sessions: 0, completed: 0, men: 0, women: 0, activities: []
+            };
+          });
+
+          // Peupler window.searchableItems.districts pour la recherche
+          window.searchableItems.districts = banguiDistricts.features.map((feature, index) => {
+            // Calculer le centre du district
+            const bounds = getBoundsForFeature(feature.geometry);
+            const center = [
+              (bounds[0][0] + bounds[1][0]) / 2,
+              (bounds[0][1] + bounds[1][1]) / 2
+            ];
+
+            return {
+              id: index,
+              name: feature.properties.shapeName,
+              center: center,
+              color: feature.properties.color,
+              activities: feature.properties.activities
+            };
+          });
+          console.log('🔍 Districts indexés pour la recherche:', window.searchableItems.districts.length);
+
+          // Variable globale pour suivre le district sélectionné
+          window.selectedDistrictId = null;
+
+          // Variables pour les graphiques
+          let trainingsChart = null;
+          let genderChart = null;
+
+          // Fonction pour afficher le panneau d'informations du district (globale pour la recherche)
+          window.showDistrictPanel = function(districtName, districtData, districtColor) {
+            console.log('📊 Affichage du panneau pour:', districtName, districtData);
+            const panel = document.getElementById('district-info-panel');
+
+            // Mettre à jour le titre (garder le texte en blanc)
+            document.getElementById('panel-district-name').textContent = districtName;
+
+            // Mettre à jour les statistiques
+            document.getElementById('panel-beneficiaries').textContent = districtData.beneficiaries;
+            document.getElementById('panel-trainings').textContent = districtData.trainings;
+            document.getElementById('panel-sessions').textContent = districtData.sessions;
+            document.getElementById('panel-completed').textContent = districtData.completed + '%';
+
+            // Mettre à jour la liste des activités
+            const activitiesContainer = document.getElementById('panel-activities');
+            activitiesContainer.innerHTML = '';
+
+            if (districtData.activities && districtData.activities.length > 0) {
+              districtData.activities.forEach(activity => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
+                  <div class="activity-info">
+                    <div class="activity-icon">
+                      <i class="ti ti-${activity.status === 'active' ? 'bolt' : activity.status === 'completed' ? 'check' : 'clock'}"></i>
+                    </div>
+                    <div class="activity-details">
+                      <div class="activity-name">${activity.name}</div>
+                      <div class="activity-meta">${activity.date}</div>
+                    </div>
+                  </div>
+                  <span class="activity-status status-${activity.status}">
+                    ${activity.status === 'active' ? 'En cours' : activity.status === 'completed' ? 'Terminé' : 'Planifié'}
+                  </span>
+                `;
+                activitiesContainer.appendChild(activityItem);
+              });
+            } else {
+              activitiesContainer.innerHTML = '<p style="color:#999;font-size:12px;text-align:center;padding:12px;">Aucune activité enregistrée</p>';
+            }
+
+            // Créer/Mettre à jour le graphique des formations
+            const trainingsCtx = document.getElementById('trainings-chart').getContext('2d');
+            if (trainingsChart) {
+              trainingsChart.destroy();
+            }
+            trainingsChart = new Chart(trainingsCtx, {
+              type: 'bar',
+              data: {
+                labels: ['Bénéficiaires', 'Formations', 'Sessions', 'Taux'],
+                datasets: [{
+                  label: 'Données',
+                  data: [districtData.beneficiaries, districtData.trainings * 10, districtData.sessions * 5, districtData.completed],
+                  backgroundColor: [
+                    districtColor + '80',
+                    districtColor + '60',
+                    districtColor + '40',
+                    districtColor + '20'
+                  ],
+                  borderColor: districtColor,
+                  borderWidth: 2
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false }
+                },
+                scales: {
+                  y: { beginAtZero: true }
+                }
+              }
+            });
+
+            // Créer/Mettre à jour le pie chart H/F
+            const genderCtx = document.getElementById('gender-chart').getContext('2d');
+            if (genderChart) {
+              genderChart.destroy();
+            }
+            genderChart = new Chart(genderCtx, {
+              type: 'doughnut',
+              data: {
+                labels: ['Hommes', 'Femmes'],
+                datasets: [{
+                  data: [districtData.men, districtData.women],
+                  backgroundColor: ['#377EB8', '#F781BF'],
+                  borderWidth: 2,
+                  borderColor: '#fff'
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: { font: { size: 11 } }
+                  }
+                }
+              }
+            });
+
+            // Afficher le panneau
+            panel.style.display = 'block';
+          }
+
+          // Bouton pour fermer le panneau
+          document.getElementById('close-panel').addEventListener('click', () => {
+            document.getElementById('district-info-panel').style.display = 'none';
+          });
+
+          // Gestion des onglets
+          document.querySelectorAll('.panel-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+              const targetTab = e.currentTarget.dataset.tab;
+
+              // Retirer la classe active de tous les onglets et panneaux
+              document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
+              document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+              // Activer l'onglet et le panneau ciblés
+              e.currentTarget.classList.add('active');
+              document.getElementById('tab-' + targetTab).classList.add('active');
+            });
+          });
+
+          // Ajouter la source des districts
+          map.addSource('districts', {
+            type: 'geojson',
+            data: banguiDistricts
+          });
+
+          // Ajouter un calque de remplissage avec couleurs
+          map.addLayer({
+            id: 'districts-fill',
+            type: 'fill',
+            source: 'districts',
+            paint: {
+              'fill-color': ['get', 'color'],
+              'fill-opacity': [
+                'case',
+                ['boolean', ['feature-state', 'hover'], false], 0.3,  // Hover: 30% opacité
+                ['boolean', ['feature-state', 'selected'], false], 0.5, // Selected: 50% opacité
+                0.15  // Default: 15% opacité
+              ]
+            },
+            layout: {
+              'visibility': 'visible'
+            }
+          });
+
+          // Ajouter le calque des bordures de districts (gris foncé avec effet visible)
+          map.addLayer({
+            id: 'districts-borders',
+            type: 'line',
+            source: 'districts',
+            paint: {
+              'line-color': '#303030',
+              'line-width': 4,
+              'line-opacity': 1
+            },
+            layout: {
+              'visibility': 'visible'
+            }
+          });
+
+          // Ajouter une bordure externe plus claire pour contraste
+          map.addLayer({
+            id: 'districts-borders-outline',
+            type: 'line',
+            source: 'districts',
+            paint: {
+              'line-color': '#ffffff',
+              'line-width': 6,
+              'line-opacity': 0.5,
+              'line-gap-width': 4
+            },
+            layout: {
+              'visibility': 'visible'
+            }
+          });
+
+          // Ajouter les labels des districts
+          map.addLayer({
+            id: 'districts-labels',
+            type: 'symbol',
+            source: 'districts',
+            layout: {
+              'text-field': ['get', 'shapeName'],
+              'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+              'text-size': 14,
+              'text-anchor': 'center',
+              'visibility': 'visible'
+            },
+            paint: {
+              'text-color': '#000000',
+              'text-halo-color': '#ffffff',
+              'text-halo-width': 3,
+              'text-halo-blur': 1
+            }
+          });
+
+          console.log('✅ Districts de Bangui affichés avec succès !');
+          console.log('🗺️ Vérifiez la carte - les bordures grises devraient être visibles');
+
+          // Créer dynamiquement les checkboxes pour chaque district
+          const submenu = document.getElementById('districts-submenu');
+          banguiDistricts.features.forEach((feature, index) => {
+            const label = document.createElement('label');
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            checkbox.id = `district-${index}`;
+            checkbox.dataset.districtId = index;
+
+            const colorIndicator = document.createElement('div');
+            colorIndicator.className = 'district-color-indicator';
+            colorIndicator.style.background = feature.properties.color;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = feature.properties.shapeName;
+            nameSpan.style.fontSize = '12px';
+
+            label.appendChild(checkbox);
+            label.appendChild(colorIndicator);
+            label.appendChild(nameSpan);
+            submenu.appendChild(label);
+
+            // Gestionnaire pour afficher/masquer individuellement
+            checkbox.addEventListener('change', (e) => {
+              const districtId = parseInt(e.target.dataset.districtId);
+              const visibility = e.target.checked;
+
+              // Utiliser un filtre pour masquer/afficher le district
+              const currentFilter = map.getFilter('districts-fill') || ['all'];
+
+              if (!visibility) {
+                // Ajouter ce district à la liste des districts masqués
+                if (!window.hiddenDistricts) window.hiddenDistricts = new Set();
+                window.hiddenDistricts.add(districtId);
+              } else {
+                // Retirer ce district de la liste des districts masqués
+                if (window.hiddenDistricts) window.hiddenDistricts.delete(districtId);
+              }
+
+              // Appliquer le filtre
+              updateDistrictsFilter();
+              console.log(`${visibility ? '✅ Afficher' : '❌ Masquer'}: ${feature.properties.shapeName}`);
+            });
+          });
+
+          // Fonction pour mettre à jour le filtre des districts
+          window.updateDistrictsFilter = function() {
+            if (!window.hiddenDistricts || window.hiddenDistricts.size === 0) {
+              // Tous les districts sont visibles
+              map.setFilter('districts-fill', null);
+              map.setFilter('districts-borders', null);
+              map.setFilter('districts-borders-outline', null);
+              map.setFilter('districts-labels', null);
+            } else {
+              // Créer un filtre pour exclure les districts masqués
+              const visibleIds = [];
+              for (let i = 0; i < banguiDistricts.features.length; i++) {
+                if (!window.hiddenDistricts.has(i)) {
+                  visibleIds.push(i);
+                }
+              }
+
+              const filter = ['in', ['id'], ['literal', visibleIds]];
+              map.setFilter('districts-fill', filter);
+              map.setFilter('districts-borders', filter);
+              map.setFilter('districts-borders-outline', filter);
+              map.setFilter('districts-labels', filter);
+            }
+          };
+
+          // Toggle du sous-menu
+          const toggleIcon = document.getElementById('districts-toggle-icon');
+          const districtsLabel = document.querySelector('.districts-control > label');
+
+          toggleIcon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = submenu.style.display === 'block';
+            submenu.style.display = isOpen ? 'none' : 'block';
+            toggleIcon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+          });
+
+          districtsLabel.addEventListener('click', (e) => {
+            // Ne pas ouvrir le menu si on clique sur la checkbox
+            if (e.target.type !== 'checkbox') {
+              const isOpen = submenu.style.display === 'block';
+              submenu.style.display = isOpen ? 'none' : 'block';
+              toggleIcon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+          });
+
+          // Fonction pour calculer les limites (bounds) d'une géométrie
+          function getBounds(geometry) {
+            let minLng = Infinity, minLat = Infinity;
+            let maxLng = -Infinity, maxLat = -Infinity;
+
+            function processCoordinates(coords) {
+              if (Array.isArray(coords[0])) {
+                coords.forEach(processCoordinates);
+              } else {
+                const [lng, lat] = coords;
+                minLng = Math.min(minLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLng = Math.max(maxLng, lng);
+                maxLat = Math.max(maxLat, lat);
+              }
+            }
+
+            processCoordinates(geometry.coordinates);
+            return [[minLng, minLat], [maxLng, maxLat]];
+          }
+
+          // Clic sur un district pour zoomer et sélectionner
+          map.on('click', 'districts-fill', (e) => {
+            if (e.features.length > 0) {
+              const feature = e.features[0];
+              const districtName = feature.properties.shapeName;
+              const geometry = feature.geometry;
+              const clickedDistrictId = feature.id;
+
+              console.log('🖱️ Clic sur:', districtName);
+
+              // Désélectionner le district précédent
+              if (window.selectedDistrictId !== null && window.selectedDistrictId !== clickedDistrictId) {
+                map.setFeatureState(
+                  { source: 'districts', id: window.selectedDistrictId },
+                  { selected: false }
+                );
+              }
+
+              // Sélectionner le nouveau district
+              window.selectedDistrictId = clickedDistrictId;
+              map.setFeatureState(
+                { source: 'districts', id: clickedDistrictId },
+                { selected: true }
+              );
+
+              // Afficher le panneau d'informations
+              window.showDistrictPanel(districtName, feature.properties.activities, feature.properties.color);
+
+              // Calculer les limites du district
+              const bounds = getBounds(geometry);
+              const center = [
+                (bounds[0][0] + bounds[1][0]) / 2,
+                (bounds[0][1] + bounds[1][1]) / 2
+              ];
+
+              // Animation en 2 étapes : dézoom très léger puis zoom sur le district
+              const currentZoom = map.getZoom();
+
+              // Étape 1: Dézoom très léger (réduction de 0.8 niveaux de zoom)
+              map.flyTo({
+                center: BANGUI_CENTER,
+                zoom: Math.max(currentZoom - 0.8, 10.5), // Dézoom très léger, minimum 10.5
+                duration: 700,
+                essential: true
+              });
+
+              // Étape 2: Après le dézoom léger, zoomer sur le district
+              setTimeout(() => {
+                map.fitBounds(bounds, {
+                  padding: {top: 100, bottom: 100, left: 100, right: 450}, // Padding pour voir la sidebar
+                  maxZoom: 14,
+                  duration: 1400 // Animation de zoom plus fluide
+                });
+
+                // Afficher le popup après le zoom
+                setTimeout(() => {
+                  new mapboxgl.Popup({
+                    closeButton: true,
+                    closeOnClick: true
+                  })
+                    .setLngLat(center)
+                    .setHTML(`
+                      <div class="popup-title">${districtName}</div>
+                      <div class="popup-info">
+                        <strong>Type:</strong> District de Bangui<br>
+                        <strong>Couleur:</strong> <span style="display:inline-block;width:12px;height:12px;background:${feature.properties.color};border:1px solid #999;margin-left:4px;"></span><br>
+                        <i class="ti ti-zoom-in"></i> Zoom sur les limites
+                      </div>
+                    `)
+                    .addTo(map);
+                }, 700); // Afficher le popup pendant l'animation de zoom
+              }, 750); // Attendre la fin du dézoom léger avant de zoomer
+            }
+          });
+        })
+        .catch(error => {
+          console.error('❌ Erreur lors du chargement des districts:', error);
+          console.error('Détails:', error.message);
+        });
+    });
+
+    // Contrôles des couches
+    document.getElementById('toggle-training-centers').addEventListener('change', (e) => {
+      const visibility = e.target.checked ? 'visible' : 'none';
+      if (map.getLayer('training-centers-layer')) {
+        map.setLayoutProperty('training-centers-layer', 'visibility', visibility);
+        map.setLayoutProperty('training-centers-labels', 'visibility', visibility);
+      }
+    });
+
+    document.getElementById('toggle-districts').addEventListener('change', (e) => {
+      const visibility = e.target.checked ? 'visible' : 'none';
+      if (map.getLayer('districts-borders')) {
+        map.setLayoutProperty('districts-borders', 'visibility', visibility);
+        map.setLayoutProperty('districts-borders-outline', 'visibility', visibility);
+        map.setLayoutProperty('districts-fill', 'visibility', visibility);
+        map.setLayoutProperty('districts-labels', 'visibility', visibility);
+      }
+    });
+
+    console.log('🗺️ Carte Mapbox initialisée avec succès !');
+    console.log('📍 Centre: Bangui, République Centrafricaine');
+    console.log('🏫 Centres de formation affichés:', trainingCenters.features.length);
+  </script>
+
+</body>
+</html>

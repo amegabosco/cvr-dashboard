@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kaggle Style Components - Demo</title>
+  <link rel="stylesheet" href="kaggle-style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Header/Navigation -->
+  <header class="site-header">
+    <div class="container">
+      <nav class="site-header__nav">
+        <a href="#" class="nav-logo">Kaggle</a>
+        <ul class="nav-links">
+          <li><a href="#" class="nav-link">Competitions</a></li>
+          <li><a href="#" class="nav-link">Datasets</a></li>
+          <li><a href="#" class="nav-link">Notebooks</a></li>
+          <li><a href="#" class="nav-link">Courses</a></li>
+          <li><a href="#" class="nav-link">Community</a></li>
+        </ul>
+        <div class="flex gap-md">
+          <button class="btn btn-secondary btn-sm">Sign In</button>
+          <button class="btn btn-primary btn-sm">Register</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mt-xl">
+
+    <!-- Typography Section -->
+    <section class="mb-xl">
+      <h1>Typography Showcase</h1>
+      <p>This is a demonstration of all typography styles available in the Kaggle-inspired design system.</p>
+
+      <div class="card mb-lg">
+        <div class="card__header">
+          <h2 class="card__title">Heading Examples</h2>
+          <p class="card__subtitle">All available heading sizes</p>
+        </div>
+        <div class="card__body">
+          <h1>Heading 1 - Main Page Title</h1>
+          <h2>Heading 2 - Section Title</h2>
+          <h3>Heading 3 - Subsection Title</h3>
+          <h4>Heading 4 - Card Title</h4>
+          <h5>Heading 5 - Small Section</h5>
+          <h6>Heading 6 - Smallest Heading</h6>
+
+          <p>This is a regular paragraph with <strong>bold text</strong>, <em>italic text</em>, and <a href="#">a link</a>. You can also include <code>inline code snippets</code> like this.</p>
+
+          <p>Another paragraph to show spacing. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Buttons Section -->
+    <section class="mb-xl">
+      <h2>Buttons</h2>
+      <p>Various button styles and sizes</p>
+
+      <div class="card mb-lg">
+        <div class="card__header">
+          <h3 class="card__title">Button Variants</h3>
+        </div>
+        <div class="card__body">
+          <div class="mb-lg">
+            <h4>Primary Buttons</h4>
+            <div class="flex gap-md mb-md">
+              <button class="btn btn-primary btn-sm">Small Primary</button>
+              <button class="btn btn-primary">Default Primary</button>
+              <button class="btn btn-primary btn-lg">Large Primary</button>
+            </div>
+          </div>
+
+          <div class="mb-lg">
+            <h4>Secondary Buttons</h4>
+            <div class="flex gap-md mb-md">
+              <button class="btn btn-secondary btn-sm">Small Secondary</button>
+              <button class="btn btn-secondary">Default Secondary</button>
+              <button class="btn btn-secondary btn-lg">Large Secondary</button>
+            </div>
+          </div>
+
+          <div class="mb-lg">
+            <h4>Success Buttons</h4>
+            <div class="flex gap-md mb-md">
+              <button class="btn btn-success btn-sm">Submit Entry</button>
+              <button class="btn btn-success">Join Competition</button>
+              <button class="btn btn-success btn-lg">Start Learning</button>
+            </div>
+          </div>
+
+          <div class="mb-lg">
+            <h4>Inverse Buttons</h4>
+            <div class="flex gap-md mb-md">
+              <button class="btn btn-inverse btn-sm">Small Inverse</button>
+              <button class="btn btn-inverse">Default Inverse</button>
+              <button class="btn btn-inverse btn-lg">Large Inverse</button>
+            </div>
+          </div>
+
+          <div>
+            <h4>Disabled State</h4>
+            <div class="flex gap-md">
+              <button class="btn btn-primary" disabled>Disabled Primary</button>
+              <button class="btn btn-secondary" disabled>Disabled Secondary</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Badges Section -->
+    <section class="mb-xl">
+      <h2>Badges & Tags</h2>
+      <p>Tags for categories, status, and labels</p>
+
+      <div class="card mb-lg">
+        <div class="card__header">
+          <h3 class="card__title">Badge Styles</h3>
+        </div>
+        <div class="card__body">
+          <div class="flex gap-md mb-md">
+            <span class="badge">Default</span>
+            <span class="badge badge-primary">Featured</span>
+            <span class="badge badge-success">Active</span>
+            <span class="badge badge-warning">Hot</span>
+          </div>
+
+          <h4>Use Case Examples</h4>
+          <div class="flex gap-sm" style="flex-wrap: wrap;">
+            <span class="badge badge-primary">Python</span>
+            <span class="badge badge-primary">Machine Learning</span>
+            <span class="badge badge-primary">Computer Vision</span>
+            <span class="badge badge-success">Beginner Friendly</span>
+            <span class="badge badge-warning">Prize: $10,000</span>
+            <span class="badge">Tutorial</span>
+            <span class="badge">NLP</span>
+            <span class="badge">Deep Learning</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cards Section -->
+    <section class="mb-xl">
+      <h2>Cards</h2>
+      <p>Card components for competitions, datasets, and notebooks</p>
+
+      <div class="grid grid-cols-3">
+        <div class="card">
+          <div class="card__header">
+            <h4 class="card__title">Titanic - Machine Learning</h4>
+            <p class="card__subtitle">Start here! Predict survival on the Titanic</p>
+          </div>
+          <div class="card__body">
+            <p>Use machine learning to create a model that predicts which passengers survived the Titanic shipwreck.</p>
+            <div class="flex gap-sm" style="flex-wrap: wrap; margin-top: 12px;">
+              <span class="badge badge-primary">Classification</span>
+              <span class="badge badge-success">Beginner</span>
+            </div>
+          </div>
+          <div class="card__footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">15,000+ teams</span>
+            <button class="btn btn-primary btn-sm">Join Competition</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h4 class="card__title">House Prices - Advanced</h4>
+            <p class="card__subtitle">Predict sales prices and practice feature engineering</p>
+          </div>
+          <div class="card__body">
+            <p>Ask a home buyer to describe their dream house, and they probably won't begin with the height of the basement ceiling.</p>
+            <div class="flex gap-sm" style="flex-wrap: wrap; margin-top: 12px;">
+              <span class="badge badge-primary">Regression</span>
+              <span class="badge">Intermediate</span>
+            </div>
+          </div>
+          <div class="card__footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">4,500+ teams</span>
+            <button class="btn btn-primary btn-sm">Join Competition</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h4 class="card__title">Digit Recognizer</h4>
+            <p class="card__subtitle">Learn computer vision fundamentals with MNIST</p>
+          </div>
+          <div class="card__body">
+            <p>MNIST ("Modified National Institute of Standards and Technology") is the de facto "hello world" dataset of computer vision.</p>
+            <div class="flex gap-sm" style="flex-wrap: wrap; margin-top: 12px;">
+              <span class="badge badge-primary">Computer Vision</span>
+              <span class="badge badge-success">Beginner</span>
+            </div>
+          </div>
+          <div class="card__footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">2,100+ teams</span>
+            <button class="btn btn-primary btn-sm">Join Competition</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Forms Section -->
+    <section class="mb-xl">
+      <h2>Forms</h2>
+      <p>Form elements including inputs, selects, and textareas</p>
+
+      <div class="card mb-lg">
+        <div class="card__header">
+          <h3 class="card__title">Submit Your Prediction</h3>
+          <p class="card__subtitle">Upload your submission file</p>
+        </div>
+        <div class="card__body">
+          <form>
+            <div class="form-group">
+              <label class="form-label" for="submission-name">Submission Name</label>
+              <input
+                type="text"
+                id="submission-name"
+                class="form-input"
+                placeholder="My first submission"
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="model-type">Model Type</label>
+              <select id="model-type" class="form-select">
+                <option>Select a model type</option>
+                <option>Random Forest</option>
+                <option>XGBoost</option>
+                <option>Neural Network</option>
+                <option>Ensemble</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="description">Description</label>
+              <textarea
+                id="description"
+                class="form-textarea"
+                placeholder="Describe your approach and model..."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="file-upload">Submission File (.csv)</label>
+              <input
+                type="file"
+                id="file-upload"
+                class="form-input"
+                accept=".csv"
+              >
+            </div>
+
+            <div class="flex gap-md">
+              <button type="submit" class="btn btn-success">Submit Prediction</button>
+              <button type="button" class="btn btn-secondary">Save Draft</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tables Section -->
+    <section class="mb-xl">
+      <h2>Tables</h2>
+      <p>Leaderboard and data table styles</p>
+
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Team Name</th>
+              <th>Score</th>
+              <th>Entries</th>
+              <th>Last Submission</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-warning">1</span></td>
+              <td><strong>ML Masters</strong></td>
+              <td>0.99523</td>
+              <td>47</td>
+              <td>2 hours ago</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">2</span></td>
+              <td><strong>Data Scientists United</strong></td>
+              <td>0.99501</td>
+              <td>32</td>
+              <td>5 hours ago</td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-warning">3</span></td>
+              <td><strong>Deep Learning Squad</strong></td>
+              <td>0.99487</td>
+              <td>28</td>
+              <td>1 day ago</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Neural Network Ninjas</td>
+              <td>0.99456</td>
+              <td>19</td>
+              <td>3 days ago</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td>Ensemble Enthusiasts</td>
+              <td>0.99423</td>
+              <td>41</td>
+              <td>4 days ago</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td>Random Forest Rangers</td>
+              <td>0.99401</td>
+              <td>15</td>
+              <td>5 days ago</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Lists Section -->
+    <section class="mb-xl">
+      <h2>Lists</h2>
+      <p>Bullet points and numbered lists</p>
+
+      <div class="grid grid-cols-2">
+        <div class="card">
+          <div class="card__header">
+            <h3 class="card__title">Unordered List</h3>
+            <p class="card__subtitle">Competition Rules</p>
+          </div>
+          <div class="card__body">
+            <ul style="margin-left: 20px; line-height: 1.8;">
+              <li>You may submit up to 5 entries per day</li>
+              <li>External data is not allowed</li>
+              <li>Team mergers are permitted until 7 days before deadline</li>
+              <li>You must make your code publicly available</li>
+              <li>Winners must provide write-up of their solution</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__header">
+            <h3 class="card__title">Ordered List</h3>
+            <p class="card__subtitle">Getting Started Steps</p>
+          </div>
+          <div class="card__body">
+            <ol style="margin-left: 20px; line-height: 1.8;">
+              <li>Download the competition data</li>
+              <li>Explore the dataset in a notebook</li>
+              <li>Create a baseline model</li>
+              <li>Engineer relevant features</li>
+              <li>Train and validate your model</li>
+              <li>Make predictions on test set</li>
+              <li>Submit your predictions</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid Layouts Section -->
+    <section class="mb-xl">
+      <h2>Grid Layouts</h2>
+      <p>Responsive grid system examples</p>
+
+      <h3>4 Column Grid</h3>
+      <div class="grid grid-cols-4 mb-lg">
+        <div class="card">
+          <h4>Column 1</h4>
+          <p>Content here</p>
+        </div>
+        <div class="card">
+          <h4>Column 2</h4>
+          <p>Content here</p>
+        </div>
+        <div class="card">
+          <h4>Column 3</h4>
+          <p>Content here</p>
+        </div>
+        <div class="card">
+          <h4>Column 4</h4>
+          <p>Content here</p>
+        </div>
+      </div>
+
+      <h3>2 Column Grid</h3>
+      <div class="grid grid-cols-2 mb-lg">
+        <div class="card">
+          <h4>Left Column</h4>
+          <p>This is a wider card in a 2-column layout. Perfect for side-by-side comparisons or complementary content.</p>
+        </div>
+        <div class="card">
+          <h4>Right Column</h4>
+          <p>Another wide card. The grid automatically adjusts to mobile on smaller screens.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Utility Classes Section -->
+    <section class="mb-xl">
+      <h2>Utility Classes</h2>
+      <p>Spacing, alignment, and layout utilities</p>
+
+      <div class="card mb-lg">
+        <div class="card__header">
+          <h3 class="card__title">Flexbox Utilities</h3>
+        </div>
+        <div class="card__body">
+          <div class="flex justify-between items-center p-md" style="background: var(--bg-secondary); border-radius: 8px; margin-bottom: 16px;">
+            <span>Flex with justify-between</span>
+            <button class="btn btn-primary btn-sm">Action</button>
+          </div>
+
+          <div class="flex justify-center items-center p-md" style="background: var(--bg-secondary); border-radius: 8px; margin-bottom: 16px;">
+            <span>Centered flex content</span>
+          </div>
+
+          <div class="flex gap-md p-md" style="background: var(--bg-secondary); border-radius: 8px;">
+            <span class="badge">Tag 1</span>
+            <span class="badge">Tag 2</span>
+            <span class="badge">Tag 3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title">Text Alignment</h3>
+        </div>
+        <div class="card__body">
+          <p class="text-left">Left aligned text (default)</p>
+          <p class="text-center">Center aligned text</p>
+          <p class="text-right">Right aligned text</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Code Blocks Section -->
+    <section class="mb-xl">
+      <h2>Code Examples</h2>
+      <p>Code snippets and blocks</p>
+
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title">Python Example</h3>
+          <p class="card__subtitle">Simple model training code</p>
+        </div>
+        <div class="card__body">
+          <pre style="background: var(--bg-secondary); padding: 16px; border-radius: 8px; overflow-x: auto; font-family: var(--font-mono); font-size: 14px; line-height: 1.5;"><code>import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+# Load data
+train = pd.read_csv('train.csv')
+test = pd.read_csv('test.csv')
+
+# Train model
+model = RandomForestClassifier(n_estimators=100)
+model.fit(X_train, y_train)
+
+# Make predictions
+predictions = model.predict(X_test)</code></pre>
+
+          <p style="margin-top: 16px;">You can also use inline code like <code>model.fit()</code> or <code>pd.DataFrame()</code> within text.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer style="background: var(--bg-dark); color: var(--text-light); padding: 48px 0; margin-top: 64px;">
+    <div class="container">
+      <div class="grid grid-cols-4" style="margin-bottom: 32px;">
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Company</h4>
+          <ul style="list-style: none; line-height: 2;">
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">About</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Careers</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Blog</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Community</h4>
+          <ul style="list-style: none; line-height: 2;">
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Competitions</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Datasets</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Notebooks</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Learn</h4>
+          <ul style="list-style: none; line-height: 2;">
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Courses</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Documentation</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Getting Started</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="color: white; margin-bottom: 16px;">Support</h4>
+          <ul style="list-style: none; line-height: 2;">
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Help Center</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Contact</a></li>
+            <li><a href="#" style="color: var(--text-light); opacity: 0.8;">Terms</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="text-center" style="padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.1); opacity: 0.6;">
+        <p>&copy; 2025 Kaggle Style Demo. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
