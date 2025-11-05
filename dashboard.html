@@ -2609,7 +2609,18 @@
       const passwordInput = document.getElementById('passwordInput');
       const passwordSubmit = document.getElementById('passwordSubmit');
       const passwordError = document.getElementById('passwordError');
-      const CORRECT_PASSWORD = 'cvr2025';
+
+      // SHA-256 hash of the correct password (hashed for security)
+      const CORRECT_PASSWORD_HASH = 'de262b684f21e6db715ab83e6bc15c3f5bd823817ba27bd28b67e598ac9e364f';
+
+      // SHA-256 hashing function
+      async function sha256(message) {
+        const msgBuffer = new TextEncoder().encode(message);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+      }
 
       // Check if user is already authenticated
       const isAuthenticated = localStorage.getItem('cvr_authenticated');
@@ -2623,10 +2634,11 @@
       }
 
       // Handle password submission
-      function verifyPassword() {
+      async function verifyPassword() {
         const enteredPassword = passwordInput.value.trim();
+        const enteredPasswordHash = await sha256(enteredPassword);
 
-        if (enteredPassword === CORRECT_PASSWORD) {
+        if (enteredPasswordHash === CORRECT_PASSWORD_HASH) {
           // Correct password
           localStorage.setItem('cvr_authenticated', 'true');
 
